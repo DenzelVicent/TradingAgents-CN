@@ -5,11 +5,11 @@ version: '3.8'
 #
 # 使用方法：
 # 1. 复制.env.example为.env并配置环境变量
-# 2. 运行: sudo docker compose -f docker-compose.hub.nginx.yml up -d
+# 2. 运行: sudo docker compose -f docker-compose.denzel.yml up -d
 # 3. 访问: http://your-server (前端和后端API都通过80端口访问)
 #
-# 停止所有服务: sudo docker compose -f docker-compose.hub.nginx.yml down
-# 拉取最新镜像: sudo docker compose -f docker-compose.hub.nginx.yml pull
+# 停止所有服务: sudo docker compose -f docker-compose.denzel.yml down
+# 拉取最新镜像: sudo docker compose -f docker-compose.denzel.yml pull
 #
 # 优势：
 # - 前端和后端通过同一端口访问，无跨域问题
