@@ -54,12 +54,13 @@ except ImportError:
     IntegratedCacheManager = None
     INTEGRATED_CACHE_AVAILABLE = False
 
-# 导入应用缓存适配器
+# 导入应用缓存适配器（函数，非类）
 try:
-    from .app_adapter import AppCacheAdapter
+    from .app_adapter import get_basics_from_cache, get_market_quote_dataframe
     APP_CACHE_AVAILABLE = True
 except ImportError:
-    AppCacheAdapter = None
+    get_basics_from_cache = None
+    get_market_quote_dataframe = None
     APP_CACHE_AVAILABLE = False
 
 # 导入 MongoDB 缓存适配器
@@ -73,8 +74,8 @@ except ImportError:
 # 全局缓存实例
 _cache_instance = None
 
-# 默认缓存策略
-DEFAULT_CACHE_STRATEGY = os.getenv("TA_CACHE_STRATEGY", "file")
+# 默认缓存策略（改为 integrated，优先使用 MongoDB/Redis 缓存）
+DEFAULT_CACHE_STRATEGY = os.getenv("TA_CACHE_STRATEGY", "integrated")
 
 def get_cache() -> Union[StockDataCache, IntegratedCacheManager]:
     """
@@ -129,7 +130,8 @@ __all__ = [
     'INTEGRATED_CACHE_AVAILABLE',
 
     # 应用缓存适配器
-    'AppCacheAdapter',
+    'get_basics_from_cache',
+    'get_market_quote_dataframe',
     'APP_CACHE_AVAILABLE',
 
     # MongoDB 缓存适配器

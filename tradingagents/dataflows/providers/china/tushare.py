@@ -438,6 +438,12 @@ class TushareProvider(BaseStockDataProvider):
 
             self.logger.info(f"✅ 获取到 {len(df)} 只股票的实时行情")
 
+            # 🔥 获取当前日期（UTC+8）
+            from datetime import datetime, timezone, timedelta
+            cn_tz = timezone(timedelta(hours=8))
+            now_cn = datetime.now(cn_tz)
+            trade_date = now_cn.strftime("%Y%m%d")  # 格式：20251114（与 Tushare 格式一致）
+
             # 转换为字典格式
             result = {}
             for _, row in df.iterrows():
@@ -461,6 +467,7 @@ class TushareProvider(BaseStockDataProvider):
                     'volume': row.get('vol'),  # 成交量（股）
                     'amount': row.get('amount'),  # 成交额（元）
                     'num': row.get('num'),  # 成交笔数
+                    'trade_date': trade_date,  # 🔥 添加交易日期字段
                 }
 
                 # 计算涨跌幅
@@ -1378,7 +1385,7 @@ class TushareProvider(BaseStockDataProvider):
                 "roe_waa": self._safe_float(latest_indicator.get('roe_waa')),  # 加权平均净资产收益率
                 "roe_dt": self._safe_float(latest_indicator.get('roe_dt')),  # 净资产收益率(扣除非经常损益)
                 "roa2": self._safe_float(latest_indicator.get('roa2')),  # 总资产收益率(扣除非经常损益)
-                "gross_margin": self._safe_float(latest_indicator.get('gross_margin')),  # 销售毛利率
+                "gross_margin": self._safe_float(latest_indicator.get('grossprofit_margin')),  # 🔥 修复：使用 grossprofit_margin（销售毛利率%）而不是 gross_margin（毛利绝对值）
                 "netprofit_margin": self._safe_float(latest_indicator.get('netprofit_margin')),  # 销售净利率
                 "cogs_of_sales": self._safe_float(latest_indicator.get('cogs_of_sales')),  # 销售成本率
                 "expense_of_sales": self._safe_float(latest_indicator.get('expense_of_sales')),  # 销售期间费用率

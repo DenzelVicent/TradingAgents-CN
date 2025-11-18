@@ -60,7 +60,7 @@ def _get_company_name_for_fundamentals(ticker: str, market_info: dict) -> str:
         elif market_info['is_hk']:
             # 港股：使用改进的港股工具
             try:
-                from tradingagents.dataflows.improved_hk_utils import get_hk_company_name_improved
+                from tradingagents.dataflows.providers.hk.improved_hk import get_hk_company_name_improved
                 company_name = get_hk_company_name_improved(ticker)
                 logger.debug(f"📊 [基本面分析师] 使用改进港股工具获取名称: {ticker} -> {company_name}")
                 return company_name
@@ -117,7 +117,21 @@ def create_fundamentals_analyst(llm, toolkit):
 
         current_date = state["trade_date"]
         ticker = state["company_of_interest"]
-        start_date = '2025-05-28'
+
+        # 🔧 基本面分析数据范围：固定获取10天数据（处理周末/节假日/数据延迟）
+        # 参考文档：docs/ANALYST_DATA_CONFIGURATION.md
+        # 基本面分析主要依赖财务数据（PE、PB、ROE等），只需要当前股价
+        # 获取10天数据是为了保证能拿到数据，但实际分析只使用最近2天
+        from datetime import datetime, timedelta
+        try:
+            end_date_dt = datetime.strptime(current_date, "%Y-%m-%d")
+            start_date_dt = end_date_dt - timedelta(days=10)
+            start_date = start_date_dt.strftime("%Y-%m-%d")
+            logger.info(f"📅 [基本面分析师] 数据范围: {start_date} 至 {current_date} (固定10天)")
+        except Exception as e:
+            # 如果日期解析失败，使用默认10天前
+            logger.warning(f"⚠️ [基本面分析师] 日期解析失败，使用默认范围: {e}")
+            start_date = (datetime.now() - timedelta(days=10)).strftime("%Y-%m-%d")
 
         logger.debug(f"📊 [DEBUG] 输入参数: ticker={ticker}, date={current_date}")
         logger.debug(f"📊 [DEBUG] 当前状态中的消息数量: {len(state.get('messages', []))}")
@@ -320,9 +334,11 @@ def create_fundamentals_analyst(llm, toolkit):
         for i, msg in enumerate(state['messages']):
             msg_type = type(msg).__name__
             if hasattr(msg, 'content'):
-                content_preview = str(msg.content)[:500] + "..." if len(str(msg.content)) > 500 else str(msg.content)
+                # 🔥 调试模式：打印完整内容，不截断
+                content_full = str(msg.content)
                 logger.info(f"消息 {i+1} [{msg_type}]:")
-                logger.info(f"  内容: {content_preview}")
+                logger.info(f"  内容长度: {len(content_full)} 字符")
+                logger.info(f"  内容: {content_full}")
             if hasattr(msg, 'tool_calls') and msg.tool_calls:
                 logger.info(f"  工具调用: {[tc.get('name', 'unknown') for tc in msg.tool_calls]}")
             if hasattr(msg, 'name'):
@@ -356,9 +372,9 @@ def create_fundamentals_analyst(llm, toolkit):
         logger.info(f"🤖 [基本面分析师] - 消息类型: {type(result).__name__}")
         logger.info(f"🤖 [基本面分析师] - 内容长度: {len(result.content) if hasattr(result, 'content') else 0}")
         if hasattr(result, 'content') and result.content:
-            # 截取前500字符避免日志过长
-            content_preview = result.content[:500] + "..." if len(result.content) > 500 else result.content
-            logger.info(f"🤖 [基本面分析师] - 内容预览: {content_preview}")
+            # 🔥 调试模式：打印完整内容，不截断
+            logger.info(f"🤖 [基本面分析师] - 完整内容:")
+            logger.info(f"{result.content}")
         
         # 🔍 [调试日志] 打印tool_calls的详细信息
         # 详细记录 LLM 返回结果

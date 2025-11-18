@@ -831,7 +831,7 @@ class SimpleAnalysisService:
 
             # 🔍 验证股票代码是否存在
             logger.info(f"🔍 开始验证股票代码: {stock_code}")
-            from tradingagents.utils.stock_validator import prepare_stock_data
+            from tradingagents.utils.stock_validator import prepare_stock_data_async
             from datetime import datetime
 
             # 获取市场类型
@@ -854,9 +854,8 @@ class SimpleAnalysisService:
                         analysis_date = datetime.now().strftime('%Y-%m-%d')
                         logger.warning(f"⚠️ 分析日期格式不正确，使用今天: {analysis_date}")
 
-            # 验证股票代码并预获取数据
-            validation_result = await asyncio.to_thread(
-                prepare_stock_data,
+            # 🔥 使用异步版本，直接 await，避免事件循环冲突
+            validation_result = await prepare_stock_data_async(
                 stock_code=stock_code,
                 market_type=market_type,
                 period_days=30,
@@ -2100,9 +2099,10 @@ class SimpleAnalysisService:
                 ]
                 query = {"$or": or_conditions}
 
-                if status:
-                    # 这里直接用字符串状态过滤，数据库内通常为字符串
-                    query["status"] = status
+                if task_status:
+                    # 使用映射后的状态值（TaskStatus枚举的value）
+                    query["status"] = task_status.value
+                    logger.info(f"📋 [Tasks] 添加状态过滤: {task_status.value}")
 
                 logger.info(f"📋 [Tasks] MongoDB 查询条件: {query}")
                 # 读取更多数据用于合并
@@ -2562,7 +2562,7 @@ class SimpleAnalysisService:
                 elif market_info.get("market") == "hong_kong":
                     # 港股：使用改进的港股工具
                     try:
-                        from tradingagents.dataflows.improved_hk_utils import get_hk_company_name_improved
+                        from tradingagents.dataflows.providers.hk.improved_hk import get_hk_company_name_improved
                         stock_name = get_hk_company_name_improved(stock_symbol)
                         logger.info(f"📊 获取港股名称: {stock_symbol} -> {stock_name}")
                     except Exception:
