@@ -34,7 +34,7 @@ services:
       MONGO_INITDB_DATABASE: tradingagents
       TZ: "Asia/Shanghai"
     networks:
-      - tradingagents-network
+      - tradingagents
     healthcheck:
       test: echo 'db.runCommand("ping").ok' | mongo localhost:27017/test --quiet
       interval: 10s
@@ -55,7 +55,7 @@ services:
       TZ: "Asia/Shanghai"
     command: redis-server --appendonly yes --requirepass tradingagents123
     networks:
-      - tradingagents-network
+      - tradingagents
     healthcheck:
       test: ["CMD", "redis-cli", "-a", "tradingagents123", "ping"]
       interval: 10s
@@ -141,7 +141,7 @@ services:
       redis:
         condition: service_healthy
     networks:
-      - tradingagents-network
+      - tradingagents
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
       interval: 30s
@@ -167,7 +167,7 @@ services:
     depends_on:
       - backend
     networks:
-      - tradingagents-network
+      - tradingagents
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80"]
       interval: 30s
@@ -188,7 +188,7 @@ services:
       - frontend
       - backend
     networks:
-      - tradingagents-network
+      - tradingagents
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/health"]
       interval: 30s
@@ -203,6 +203,6 @@ volumes:
     driver: local
 
 networks:
-  tradingagents-network:
+  tradingagents:
     driver: bridge
 
